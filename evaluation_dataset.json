@@ -1,0 +1,202 @@
+[
+  {
+    "query": "how does photosynthesis work in plants",
+    "relevant_passage_ids": [226, 227, 228, 229, 230, 231, 232]
+  },
+  {
+    "query": "what is the difference between mitosis and meiosis",
+    "relevant_passage_ids": [89, 96]
+  },
+  {
+    "query": "how do atoms combine to form molecules",
+    "relevant_passage_ids": [717, 718]
+  },
+  {
+    "query": "what is convergent evolution",
+    "relevant_passage_ids": [305, 310, 314]
+  },
+  {
+    "query": "explain the process of cellular respiration",
+    "relevant_passage_ids": [365, 229]
+  },
+  {
+    "query": "what are diatoms and why are they important",
+    "relevant_passage_ids": [1153, 1154]
+  },
+  {
+    "query": "how is heat transferred between objects",
+    "relevant_passage_ids": [596, 598]
+  },
+  {
+    "query": "what is palladium used for",
+    "relevant_passage_ids": [749]
+  },
+  {
+    "query": "what are the stages of photosynthesis light and dark reactions",
+    "relevant_passage_ids": [229, 228]
+  },
+  {
+    "query": "how do plants convert sunlight into chemical energy",
+    "relevant_passage_ids": [226, 230, 231, 232]
+  },
+  {
+    "query": "what is the reserve bank of australia",
+    "relevant_passage_ids": [0, 1]
+  },
+  {
+    "query": "what is investment banking and what do investment bankers do",
+    "relevant_passage_ids": [1042, 1043, 1045, 1047, 1049]
+  },
+  {
+    "query": "what are typical mortgage closing costs",
+    "relevant_passage_ids": [917, 918, 921]
+  },
+  {
+    "query": "how does term life insurance work",
+    "relevant_passage_ids": [2117, 2120]
+  },
+  {
+    "query": "what are the best high yield savings accounts",
+    "relevant_passage_ids": [1977, 1978]
+  },
+  {
+    "query": "how does the federal reserve set interest rates",
+    "relevant_passage_ids": [1979, 1981]
+  },
+  {
+    "query": "what is the average net worth of a millionaire",
+    "relevant_passage_ids": [846, 848]
+  },
+  {
+    "query": "what are the costs of homeownership utilities and insurance",
+    "relevant_passage_ids": [2182, 917]
+  },
+  {
+    "query": "how do banks make money from loans",
+    "relevant_passage_ids": [1042, 1043, 1979]
+  },
+  {
+    "query": "what is the difference between stocks and bonds",
+    "relevant_passage_ids": [1043, 1045, 1049]
+  },
+  {
+    "query": "what is conversion disorder and its symptoms",
+    "relevant_passage_ids": [38, 39]
+  },
+  {
+    "query": "how does measles spread and how is it prevented",
+    "relevant_passage_ids": [169, 174]
+  },
+  {
+    "query": "what is diabetic nephropathy and how does it affect the kidneys",
+    "relevant_passage_ids": [272, 277]
+  },
+  {
+    "query": "what causes bacterial pneumonia",
+    "relevant_passage_ids": [360]
+  },
+  {
+    "query": "what is carpal tunnel syndrome and what are its symptoms",
+    "relevant_passage_ids": [621]
+  },
+  {
+    "query": "how is hepatitis c transmitted and what does it do to the liver",
+    "relevant_passage_ids": [686, 690]
+  },
+  {
+    "query": "what is the nutritional value of peanut butter",
+    "relevant_passage_ids": [508]
+  },
+  {
+    "query": "what is parkinsons disease and how does it affect the body",
+    "relevant_passage_ids": [912]
+  },
+  {
+    "query": "how many calories do you burn during exercise",
+    "relevant_passage_ids": [1592]
+  },
+  {
+    "query": "what is hashimotos thyroiditis",
+    "relevant_passage_ids": [1606]
+  },
+  {
+    "query": "what is the history of computers and when was the first programmable computer built",
+    "relevant_passage_ids": [496]
+  },
+  {
+    "query": "what is ip address spoofing and how does it work",
+    "relevant_passage_ids": [2169, 2172, 2174, 2176]
+  },
+  {
+    "query": "how do stateful firewalls work",
+    "relevant_passage_ids": [2762, 2763, 2765, 2768]
+  },
+  {
+    "query": "what is network latency and what causes it",
+    "relevant_passage_ids": [3281, 3282, 3288]
+  },
+  {
+    "query": "how to install linux on a windows computer",
+    "relevant_passage_ids": [4277, 4279]
+  },
+  {
+    "query": "what is the difference between ram and storage",
+    "relevant_passage_ids": [4441, 4442]
+  },
+  {
+    "query": "what is a programmable logic controller used for",
+    "relevant_passage_ids": [3752]
+  },
+  {
+    "query": "what is phishing and how to protect yourself from it",
+    "relevant_passage_ids": [2176, 2172]
+  },
+  {
+    "query": "how do virtual machines work",
+    "relevant_passage_ids": [4279]
+  },
+  {
+    "query": "what is arp spoofing in networking",
+    "relevant_passage_ids": [2174, 2169]
+  },
+  {
+    "query": "where is sydney australia located",
+    "relevant_passage_ids": [17, 21, 23]
+  },
+  {
+    "query": "what is the tallest mountain in the world",
+    "relevant_passage_ids": [1269, 1270, 1273, 1275, 1653, 1655]
+  },
+  {
+    "query": "what countries are in scandinavia",
+    "relevant_passage_ids": [1634, 1641]
+  },
+  {
+    "query": "what is the savanna biome and where are savannas found",
+    "relevant_passage_ids": [2759, 2760]
+  },
+  {
+    "query": "what is the weather like in morocco",
+    "relevant_passage_ids": [1669, 1672]
+  },
+  {
+    "query": "where is greenland located and who does it belong to",
+    "relevant_passage_ids": [1644]
+  },
+  {
+    "query": "how are canyons formed by erosion",
+    "relevant_passage_ids": [1294]
+  },
+  {
+    "query": "what is the farthest planet from the sun",
+    "relevant_passage_ids": [737, 738]
+  },
+  {
+    "query": "what are the beaches like in sydney",
+    "relevant_passage_ids": [23, 17]
+  },
+  {
+    "query": "how tall is mount everest in feet and meters",
+    "relevant_passage_ids": [1270, 1653, 1272]
+  }
+]

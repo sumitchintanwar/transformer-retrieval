@@ -2,7 +2,7 @@
 
 ## Current State
 
-A fully functional semantic search engine with three retrieval modes (Semantic, BM25, Hybrid) over 10K MS MARCO passages, with a Streamlit UI, benchmarking, and evaluation dataset.
+A fully functional semantic search engine with three retrieval modes (Semantic, BM25, Hybrid) over 10K MS MARCO passages. Includes Streamlit UI, benchmarking, evaluation dataset, and quality evaluation with metrics.
 
 ---
 
@@ -67,7 +67,23 @@ A fully functional semantic search engine with three retrieval modes (Semantic, 
 - 10 queries per category: Science, Finance, Health, Technology, Geography
 - Sourced from actual MS MARCO subset passages
 
-### 6. Documentation
+### 6. Quality Evaluation (`evaluation.py`)
+
+Evaluates Precision@10, Recall@10, MRR@10 for all three retrievers.
+
+**Results**:
+| Method | Precision@10 | Recall@10 | MRR@10 |
+|--------|-------------:|----------:|-------:|
+| BM25 | 0.1360 | 0.6090 | 0.4411 |
+| Semantic | 0.1840 | 0.7933 | 0.5247 |
+| Hybrid | 0.1720 | 0.7360 | 0.5539 |
+
+**Key findings**:
+- Semantic wins Precision and Recall — finds more relevant documents
+- Hybrid wins MRR — first relevant result appears higher in the list
+- BM25 trails on all metrics
+
+### 7. Documentation
 
 | File | Content |
 |------|---------|
@@ -75,6 +91,7 @@ A fully functional semantic search engine with three retrieval modes (Semantic, 
 | `MIGRATION_NOTES.md` | Schema changes, model changes, FAISS changes, app changes |
 | `README.md` | Setup, indexing pipeline, run instructions, Docker, BM25 usage |
 | `benchmark_results.md` | Latency benchmarks |
+| `evaluation_report.md` | Quality evaluation results and analysis |
 | `PROGRESS.md` | This file |
 
 ---
@@ -88,7 +105,9 @@ semantic-search-engine/
 ├── bm25_search.py              # BM25Retriever class
 ├── build_index.py              # FAISS index builder
 ├── dataset_download.py         # MS MARCO downloader
+├── evaluation.py               # Quality evaluation (P@10, R@10, MRR@10)
 ├── evaluation_dataset.json     # 50 queries with ground truth
+├── evaluation_report.md        # Evaluation results
 ├── hybrid_search.py            # SemanticRetriever + HybridRetriever
 ├── preprocess.py               # Data preprocessing
 ├── test_hybrid.py              # Hybrid search comparison test
@@ -108,7 +127,7 @@ semantic-search-engine/
 │   └── faiss_index.pickle
 ├── vector_engine/
 │   ├── __init__.py
-│   └── utils.py                # vector_search(), id2details() removed
+│   └── utils.py                # vector_search()
 └── notebooks/
     └── 001_vector_search.ipynb # Original notebook (updated model refs)
 ```
@@ -125,15 +144,24 @@ semantic-search-engine/
 
 ---
 
+## Git History
+
+```
+b9c0ead Add evaluation pipeline and report
+05c7ebc Semantic search engine: MS MARCO + BM25 + Hybrid retrieval
+```
+
+---
+
 ## What's NOT Done Yet
 
-- [ ] Evaluate retrieval quality using `evaluation_dataset.json` (precision, recall, MRR)
-- [ ] Tune hybrid alpha parameter
+- [ ] Tune hybrid alpha parameter (sweep alpha=0.0 to 1.0)
 - [ ] Add cross-encoder re-ranking stage
 - [ ] Persistent BM25 index (currently built in-memory at startup)
 - [ ] Dockerfile updated for new dependencies
 - [ ] CI/CD or automated testing
 - [ ] Deploy to production
+- [ ] Expand evaluation dataset beyond 50 queries
 
 ---
 
@@ -157,13 +185,18 @@ python build_index.py
 python benchmark.py
 ```
 
+### To run evaluation:
+```bash
+python evaluation.py
+```
+
 ### To test hybrid search:
 ```bash
 python test_hybrid.py
 ```
 
 ### Next logical steps:
-1. Use `evaluation_dataset.json` to compute precision@k, recall@k, MRR for all three modes
-2. Experiment with different alpha values in HybridRetriever
-3. Add cross-encoder re-ranking (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2`)
-4. Update `Dockerfile` for new dependencies
+1. Sweep alpha values in HybridRetriever to find optimal blend
+2. Add cross-encoder re-ranking (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2`)
+3. Update `Dockerfile` for new dependencies
+4. Expand evaluation dataset for more robust metrics

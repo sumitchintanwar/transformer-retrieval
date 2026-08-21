@@ -1,11 +1,17 @@
+from logger import get_logger
+
+logger = get_logger(__name__)
 import os
+import pickle
+from typing import Any, Dict, List, Union
+
+import faiss
 import numpy as np
 import pandas as pd
-import faiss
-import pickle
 from sentence_transformers import SentenceTransformer
-from bm25_search import BM25Retriever
+
 import config
+from bm25_search import BM25Retriever
 
 
 class SemanticRetriever:
@@ -22,10 +28,10 @@ class SemanticRetriever:
 
     def __init__(
         self,
-        model_name=config.MODEL_NAME,
-        index_path=config.FAISS_INDEX_FILE,
-        data_path=config.PROCESSED_DATA_FILE,
-    ):
+        model_name: str = config.MODEL_NAME,
+        index_path: str = config.FAISS_INDEX_FILE,
+        data_path: str = config.PROCESSED_DATA_FILE,
+    ) -> None:
         df = pd.read_csv(data_path)
         self.passage_ids = df["passage_id"].values
         self.passage_texts = df["passage_text"].values
@@ -35,7 +41,7 @@ class SemanticRetriever:
         with open(index_path, "rb") as f:
             self.index = faiss.deserialize_index(pickle.load(f))
 
-    def search(self, query, top_k=10):
+    def search(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
         """Search using cosine similarity over dense embeddings.
 
         Args:
@@ -52,12 +58,12 @@ class SemanticRetriever:
             raise ValueError("Query cannot be empty or whitespace-only")
         if len(query) > 1000:
             raise ValueError("Query is too long (exceeds 1000 characters)")
-            
+
         if not isinstance(top_k, int):
             raise TypeError(f"top_k must be an integer, got {type(top_k).__name__}")
         if top_k <= 0:
             raise ValueError("top_k must be greater than 0")
-            
+
         # Cap top_k at corpus size to prevent requesting more neighbors than exist
         actual_top_k = min(top_k, len(self.passage_ids))
         if actual_top_k == 0:
@@ -71,15 +77,17 @@ class SemanticRetriever:
                 continue
             idx = np.searchsorted(self.passage_ids, pid)
             if idx < len(self.passage_ids) and self.passage_ids[idx] == pid:
-                results.append({
-                    "passage_id": int(pid),
-                    "score": float(score),
-                    "passage_text": self.passage_texts[idx],
-                })
+                results.append(
+                    {
+                        "passage_id": int(pid),
+                        "score": float(score),
+                        "passage_text": self.passage_texts[idx],
+                    }
+                )
         return results
 
 
-def min_max_normalize(scores):
+def min_max_normalize(scores: List[float]) -> List[float]:
     """Apply min-max normalization to a list of scores.
 
     Maps all scores to [0, 1] range where:
@@ -129,12 +137,19 @@ class HybridRetriever:
         alpha (float): Weight for BM25 score in [0, 1]. Default 0.5.
     """
 
-    def __init__(self, bm25_retriever, semantic_retriever, alpha=0.5):
+    def __init__(
+        self,
+        bm25_retriever: BM25Retriever,
+        semantic_retriever: SemanticRetriever,
+        alpha: float = 0.5,
+    ) -> None:
         self.bm25 = bm25_retriever
         self.semantic = semantic_retriever
         self.alpha = alpha
 
-    def search(self, query, top_k=10, retrieve_k=20):
+    def search(
+        self, query: str, top_k: int = 10, retrieve_k: int = 20
+    ) -> List[Dict[str, Any]]:
         """Hybrid search combining BM25 and semantic retrieval.
 
         Args:
@@ -153,7 +168,7 @@ class HybridRetriever:
             raise ValueError("Query cannot be empty or whitespace-only")
         if len(query) > 1000:
             raise ValueError("Query is too long (exceeds 1000 characters)")
-            
+
         if not isinstance(top_k, int) or not isinstance(retrieve_k, int):
             raise TypeError("top_k and retrieve_k must be integers")
         if top_k <= 0 or retrieve_k <= 0:
@@ -194,8 +209,12 @@ class HybridRetriever:
         # Step 3: Normalize scores independently.
         # We collect all non-None scores from each retriever, normalize
         # them to [0, 1], then re-assign them to the merged results.
-        bm25_raws = [v["bm25_raw"] for v in merged.values() if v["bm25_raw"] is not None]
-        semantic_raws = [v["semantic_raw"] for v in merged.values() if v["semantic_raw"] is not None]
+        bm25_raws = [
+            v["bm25_raw"] for v in merged.values() if v["bm25_raw"] is not None
+        ]
+        semantic_raws = [
+            v["semantic_raw"] for v in merged.values() if v["semantic_raw"] is not None
+        ]
 
         bm25_normed = min_max_normalize(bm25_raws)
         semantic_normed = min_max_normalize(semantic_raws)
@@ -221,8 +240,7 @@ class HybridRetriever:
         # final_score = alpha * bm25_normalized + (1 - alpha) * semantic_normalized
         for v in merged.values():
             v["final_score"] = (
-                self.alpha * v["bm25_score"]
-                + (1 - self.alpha) * v["semantic_score"]
+                self.alpha * v["bm25_score"] + (1 - self.alpha) * v["semantic_score"]
             )
 
         # Step 5: Sort by final_score descending and return top_k.
@@ -241,7 +259,7 @@ class HybridRetriever:
 
 
 if __name__ == "__main__":
-    print("Loading retrievers...")
+    logger.info("Loading retrievers...")
     bm25 = BM25Retriever()
     semantic = SemanticRetriever()
     hybrid = HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
@@ -253,14 +271,14 @@ if __name__ == "__main__":
     ]
 
     for query in queries:
-        print(f"\n{'='*70}")
-        print(f"Query: {query}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"Query: {query}")
+        logger.info(f"{'='*70}")
         results = hybrid.search(query, top_k=5)
         for rank, r in enumerate(results, 1):
-            print(
+            logger.info(
                 f"  #{rank} final={r['final_score']:.4f} "
                 f"(bm25={r['bm25_score']:.4f}, sem={r['semantic_score']:.4f}) "
                 f"id={r['passage_id']}"
             )
-            print(f"     {r['passage_text'][:120]}...")
+            logger.info(f"     {r['passage_text'][:120]}...")

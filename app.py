@@ -1,57 +1,22 @@
-import faiss
-import pickle
-import pandas as pd
 import streamlit as st
-from sentence_transformers import SentenceTransformer
-from vector_engine.utils import vector_search
-from bm25_search import BM25Retriever
-from hybrid_search import SemanticRetriever, HybridRetriever
-import config
 
-
-@st.cache
-def read_data(data=config.PROCESSED_DATA_FILE):
-    """Read the preprocessed passage data."""
-    return pd.read_csv(data)
+from api import SearchEngineAPI
 
 
 @st.cache(allow_output_mutation=True)
-def load_model(name=config.MODEL_NAME):
-    """Instantiate the sentence transformer model."""
-    return SentenceTransformer(name)
-
-
-@st.cache(allow_output_mutation=True)
-def load_faiss_index(path_to_faiss=config.FAISS_INDEX_FILE):
-    """Load and deserialize the FAISS index."""
-    with open(path_to_faiss, "rb") as h:
-        data = pickle.load(h)
-    return faiss.deserialize_index(data)
-
-
-@st.cache(allow_output_mutation=True)
-def load_bm25_retriever():
-    """Instantiate the BM25 retriever."""
-    return BM25Retriever()
-
-
-@st.cache(allow_output_mutation=True)
-def load_semantic_retriever():
-    """Instantiate the semantic retriever."""
-    return SemanticRetriever()
-
-
-@st.cache(allow_output_mutation=True)
-def load_hybrid_retriever():
-    """Instantiate the hybrid retriever."""
-    bm25 = load_bm25_retriever()
-    semantic = load_semantic_retriever()
-    return HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
+def get_api():
+    """Instantiate and cache the Search Engine API."""
+    # Pre-loading internal retrievers so they are ready for the user
+    api = SearchEngineAPI()
+    api._load_lookup()
+    api._get_bm25()
+    api._get_semantic()
+    api._get_hybrid()
+    return api
 
 
 def display_result(rank, result, mode):
     """Display a single search result based on the retrieval mode."""
-    passage_id = result["passage_id"]
     passage_text = result["passage_text"]
     word_count = result.get("word_count", "")
 
@@ -80,7 +45,7 @@ def display_result(rank, result, mode):
 
 
 def main():
-    data = read_data()
+    api = get_api()
 
     st.title("Semantic Search Engine")
     st.caption("Powered by Sentence Transformers + FAISS | MS MARCO Passages")
@@ -92,48 +57,19 @@ def main():
     num_results = st.sidebar.slider("Number of search results", 5, 50, 10)
 
     if user_input:
-        passage_lookup = data.set_index("passage_id")
-
         if search_mode == "Semantic":
-            model = load_model()
-            faiss_index = load_faiss_index()
-            D, I = vector_search([user_input], model, faiss_index, num_results)
-            for rank, (dist, pid) in enumerate(
-                zip(D.flatten().tolist(), I.flatten().tolist()), 1
-            ):
-                if pid not in passage_lookup.index:
-                    continue
-                row = passage_lookup.loc[pid]
-                result = {
-                    "passage_id": int(pid),
-                    "score": float(dist),
-                    "passage_text": row["passage_text"],
-                    "word_count": row["word_count"],
-                }
-                display_result(rank, result, "Semantic")
+            results = api.search_semantic(user_input, top_k=num_results)
+            for rank, r in enumerate(results, 1):
+                display_result(rank, r, "Semantic")
 
         elif search_mode == "BM25":
-            bm25 = load_bm25_retriever()
-            results = bm25.search(user_input, top_k=num_results)
+            results = api.search_bm25(user_input, top_k=num_results)
             for rank, r in enumerate(results, 1):
-                pid = r["passage_id"]
-                if pid not in passage_lookup.index:
-                    continue
-                row = passage_lookup.loc[pid]
-                r["word_count"] = row["word_count"]
-                r["passage_text"] = row["passage_text"]
                 display_result(rank, r, "BM25")
 
         else:
-            hybrid = load_hybrid_retriever()
-            results = hybrid.search(user_input, top_k=num_results)
+            results = api.search_hybrid(user_input, top_k=num_results)
             for rank, r in enumerate(results, 1):
-                pid = r["passage_id"]
-                if pid not in passage_lookup.index:
-                    continue
-                row = passage_lookup.loc[pid]
-                r["word_count"] = row["word_count"]
-                r["passage_text"] = row["passage_text"]
                 display_result(rank, r, "Hybrid")
 
 

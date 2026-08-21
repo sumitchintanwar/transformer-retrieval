@@ -1,5 +1,5 @@
 from bm25_search import BM25Retriever
-from hybrid_search import SemanticRetriever, HybridRetriever
+from hybrid_search import HybridRetriever, SemanticRetriever
 
 
 def print_results(label, results, max_text=100):

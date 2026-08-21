@@ -1,9 +1,13 @@
-import json
-import numpy as np
-from bm25_search import BM25Retriever
-from hybrid_search import SemanticRetriever, HybridRetriever
-import config
+from logger import get_logger
 
+logger = get_logger(__name__)
+import json
+
+import numpy as np
+
+import config
+from bm25_search import BM25Retriever
+from hybrid_search import HybridRetriever, SemanticRetriever
 
 TOP_K = config.DEFAULT_TOP_K
 
@@ -102,19 +106,19 @@ def main():
     with open(config.EVAL_FILE) as f:
         eval_data = json.load(f)
 
-    print(f"Loaded {len(eval_data)} evaluation queries\n")
+    logger.info(f"Loaded {len(eval_data)} evaluation queries\n")
 
-    print("Loading BM25 retriever...")
+    logger.info("Loading BM25 retriever...")
     bm25 = BM25Retriever(data_path=config.PROCESSED_DATA_FILE)
 
-    print("Loading semantic retriever...")
+    logger.info("Loading semantic retriever...")
     semantic = SemanticRetriever(
         model_name=config.MODEL_NAME,
         index_path=config.FAISS_INDEX_FILE,
         data_path=config.PROCESSED_DATA_FILE,
     )
 
-    print("Loading hybrid retriever...")
+    logger.info("Loading hybrid retriever...")
     hybrid = HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
 
     retrievers = {
@@ -125,10 +129,10 @@ def main():
 
     all_results = {}
     for name, retriever in retrievers.items():
-        print(f"\nEvaluating {name}...")
+        logger.info(f"\nEvaluating {name}...")
         metrics = evaluate_retriever(retriever, eval_data, k=TOP_K)
         all_results[name] = metrics
-        print(
+        logger.info(
             f"  P@{TOP_K}={metrics['precision@k']:.4f}  "
             f"R@{TOP_K}={metrics['recall@k']:.4f}  "
             f"MRR@{TOP_K}={metrics['mrr@k']:.4f}"
@@ -172,7 +176,12 @@ def main():
 """
 
     # Add analysis based on actual results
-    scores = {name: all_results[name]["precision@k"] + all_results[name]["recall@k"] + all_results[name]["mrr@k"] for name in all_results}
+    scores = {
+        name: all_results[name]["precision@k"]
+        + all_results[name]["recall@k"]
+        + all_results[name]["mrr@k"]
+        for name in all_results
+    }
     overall_best = max(scores, key=scores.get)
 
     report += f"""The **{overall_best}** retriever achieves the strongest overall performance across all three metrics.
@@ -186,7 +195,11 @@ def main():
         report += """BM25 achieves higher recall, retrieving more of the total relevant documents within the top-10 cutoff.
 
 """
-    if all_results["Hybrid"]["precision@k"] > all_results["BM25"]["precision@k"] and all_results["Hybrid"]["precision@k"] > all_results["Semantic"]["precision@k"]:
+    if (
+        all_results["Hybrid"]["precision@k"] > all_results["BM25"]["precision@k"]
+        and all_results["Hybrid"]["precision@k"]
+        > all_results["Semantic"]["precision@k"]
+    ):
         report += """Hybrid fusion improves precision by combining lexical matching (BM25) with semantic understanding, filtering out noise from each individual method.
 
 """
@@ -201,15 +214,17 @@ def main():
     with open("evaluation_report.md", "w") as f:
         f.write(report)
 
-    print(f"\n{'='*60}")
-    print(f"{'Method':<12} {'P@10':>8} {'R@10':>8} {'MRR@10':>8}")
-    print("-" * 60)
+    logger.info(f"\n{'='*60}")
+    logger.info(f"{'Method':<12} {'P@10':>8} {'R@10':>8} {'MRR@10':>8}")
+    logger.info("-" * 60)
     for name in ["BM25", "Semantic", "Hybrid"]:
         m = all_results[name]
-        print(f"{name:<12} {m['precision@k']:>8.4f} {m['recall@k']:>8.4f} {m['mrr@k']:>8.4f}")
-    print("=" * 60)
-    print(f"\nBest overall: {overall_best}")
-    print("Report saved to evaluation_report.md")
+        logger.info(
+            f"{name:<12} {m['precision@k']:>8.4f} {m['recall@k']:>8.4f} {m['mrr@k']:>8.4f}"
+        )
+    logger.info("=" * 60)
+    logger.info(f"\nBest overall: {overall_best}")
+    logger.info("Report saved to evaluation_report.md")
 
 
 if __name__ == "__main__":

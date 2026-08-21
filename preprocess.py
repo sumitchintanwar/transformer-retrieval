@@ -1,15 +1,22 @@
+from logger import get_logger
+
+logger = get_logger(__name__)
 import os
+
 import pandas as pd
+
 import config
 
 
 def main():
     if not config.RAW_DATA_FILE.exists():
-        print(f"Error: {config.RAW_DATA_FILE} not found. Run dataset_download.py first.")
+        logger.error(
+            f"Error: {config.RAW_DATA_FILE} not found. Run dataset_download.py first."
+        )
         return
 
     df = pd.read_csv(config.RAW_DATA_FILE)
-    print(f"Loaded {len(df)} raw passages")
+    logger.info(f"Loaded {len(df)} raw passages")
 
     df = df.dropna(subset=["passage_text"])
     df = df.drop_duplicates(subset=["passage_id"])
@@ -20,8 +27,10 @@ def main():
     df = df.reset_index(drop=True)
 
     df.to_csv(config.PROCESSED_DATA_FILE, index=False)
-    print(f"Saved {len(df)} preprocessed passages to {config.PROCESSED_DATA_FILE}")
-    print(f"  word_count stats:\n{df['word_count'].describe()}")
+    logger.info(
+        f"Saved {len(df)} preprocessed passages to {config.PROCESSED_DATA_FILE}"
+    )
+    logger.info(f"  word_count stats:\n{df['word_count'].describe()}")
 
 
 if __name__ == "__main__":

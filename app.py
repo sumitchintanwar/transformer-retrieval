@@ -6,22 +6,23 @@ from sentence_transformers import SentenceTransformer
 from vector_engine.utils import vector_search
 from bm25_search import BM25Retriever
 from hybrid_search import SemanticRetriever, HybridRetriever
+import config
 
 
 @st.cache
-def read_data(data="data/msmarco_passages.csv"):
+def read_data(data=config.PROCESSED_DATA_FILE):
     """Read the preprocessed passage data."""
     return pd.read_csv(data)
 
 
 @st.cache(allow_output_mutation=True)
-def load_model(name="sentence-transformers/all-MiniLM-L6-v2"):
+def load_model(name=config.MODEL_NAME):
     """Instantiate the sentence transformer model."""
     return SentenceTransformer(name)
 
 
 @st.cache(allow_output_mutation=True)
-def load_faiss_index(path_to_faiss="models/faiss_index.pickle"):
+def load_faiss_index(path_to_faiss=config.FAISS_INDEX_FILE):
     """Load and deserialize the FAISS index."""
     with open(path_to_faiss, "rb") as h:
         data = pickle.load(h)
@@ -45,7 +46,7 @@ def load_hybrid_retriever():
     """Instantiate the hybrid retriever."""
     bm25 = load_bm25_retriever()
     semantic = load_semantic_retriever()
-    return HybridRetriever(bm25, semantic, alpha=0.5)
+    return HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
 
 
 def display_result(rank, result, mode):

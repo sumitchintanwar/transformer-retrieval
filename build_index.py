@@ -4,31 +4,25 @@ import numpy as np
 import pandas as pd
 import faiss
 from sentence_transformers import SentenceTransformer
-
-
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-DATA_FILE = os.path.join("data", "msmarco_passages.csv")
-INDEX_DIR = "models"
-INDEX_FILE = os.path.join(INDEX_DIR, "faiss_index.pickle")
-BATCH_SIZE = 256
+import config
 
 
 def main():
-    if not os.path.exists(DATA_FILE):
-        print(f"Error: {DATA_FILE} not found. Run preprocess.py first.")
+    if not config.PROCESSED_DATA_FILE.exists():
+        print(f"Error: {config.PROCESSED_DATA_FILE} not found. Run preprocess.py first.")
         return
 
-    df = pd.read_csv(DATA_FILE)
+    df = pd.read_csv(config.PROCESSED_DATA_FILE)
     print(f"Loaded {len(df)} passages")
 
-    print(f"Loading model: {MODEL_NAME}")
+    print(f"Loading model: {config.MODEL_NAME}")
     import torch
-    model = SentenceTransformer(MODEL_NAME, device="cpu")
+    model = SentenceTransformer(config.MODEL_NAME, device=config.DEVICE)
 
     print("Encoding passages...")
     embeddings = model.encode(
         df["passage_text"].tolist(),
-        batch_size=BATCH_SIZE,
+        batch_size=config.BATCH_SIZE,
         show_progress_bar=True,
         normalize_embeddings=True,
     )
@@ -41,10 +35,10 @@ def main():
 
     print(f"FAISS index size: {index.ntotal} vectors, dimension: {dim}")
 
-    os.makedirs(INDEX_DIR, exist_ok=True)
-    with open(INDEX_FILE, "wb") as f:
+    config.MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    with open(config.FAISS_INDEX_FILE, "wb") as f:
         pickle.dump(faiss.serialize_index(index), f)
-    print(f"Index saved to {INDEX_FILE}")
+    print(f"Index saved to {config.FAISS_INDEX_FILE}")
 
 
 if __name__ == "__main__":

@@ -5,11 +5,7 @@ import faiss
 import pickle
 from sentence_transformers import SentenceTransformer
 from bm25_search import BM25Retriever
-
-
-DATA_FILE = os.path.join("data", "msmarco_passages.csv")
-FAISS_INDEX_FILE = os.path.join("models", "faiss_index.pickle")
-SEMANTIC_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+import config
 
 
 class SemanticRetriever:
@@ -26,15 +22,15 @@ class SemanticRetriever:
 
     def __init__(
         self,
-        model_name=SEMANTIC_MODEL,
-        index_path=FAISS_INDEX_FILE,
-        data_path=DATA_FILE,
+        model_name=config.MODEL_NAME,
+        index_path=config.FAISS_INDEX_FILE,
+        data_path=config.PROCESSED_DATA_FILE,
     ):
         df = pd.read_csv(data_path)
         self.passage_ids = df["passage_id"].values
         self.passage_texts = df["passage_text"].values
 
-        self.model = SentenceTransformer(model_name, device="cpu")
+        self.model = SentenceTransformer(model_name, device=config.DEVICE)
 
         with open(index_path, "rb") as f:
             self.index = faiss.deserialize_index(pickle.load(f))
@@ -50,8 +46,24 @@ class SemanticRetriever:
             list[dict]: Each dict contains passage_id (int), score (float),
                         and passage_text (str), sorted by descending score.
         """
+        if not isinstance(query, str):
+            raise TypeError(f"Query must be a string, got {type(query).__name__}")
+        if not query.strip():
+            raise ValueError("Query cannot be empty or whitespace-only")
+        if len(query) > 1000:
+            raise ValueError("Query is too long (exceeds 1000 characters)")
+            
+        if not isinstance(top_k, int):
+            raise TypeError(f"top_k must be an integer, got {type(top_k).__name__}")
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than 0")
+            
+        # Cap top_k at corpus size to prevent requesting more neighbors than exist
+        actual_top_k = min(top_k, len(self.passage_ids))
+        if actual_top_k == 0:
+            return []
         vec = self.model.encode([query], normalize_embeddings=True).astype("float32")
-        D, I = self.index.search(vec, k=top_k)
+        D, I = self.index.search(vec, k=actual_top_k)
 
         results = []
         for pid, score in zip(I.flatten().tolist(), D.flatten().tolist()):
@@ -135,6 +147,18 @@ class HybridRetriever:
             list[dict]: Each dict contains passage_id, final_score,
                         bm25_score, semantic_score, and passage_text.
         """
+        if not isinstance(query, str):
+            raise TypeError(f"Query must be a string, got {type(query).__name__}")
+        if not query.strip():
+            raise ValueError("Query cannot be empty or whitespace-only")
+        if len(query) > 1000:
+            raise ValueError("Query is too long (exceeds 1000 characters)")
+            
+        if not isinstance(top_k, int) or not isinstance(retrieve_k, int):
+            raise TypeError("top_k and retrieve_k must be integers")
+        if top_k <= 0 or retrieve_k <= 0:
+            raise ValueError("top_k and retrieve_k must be greater than 0")
+
         # Step 1: Retrieve candidates from both retrievers independently.
         # Each returns up to retrieve_k results with raw scores.
         bm25_results = self.bm25.search(query, top_k=retrieve_k)
@@ -220,7 +244,7 @@ if __name__ == "__main__":
     print("Loading retrievers...")
     bm25 = BM25Retriever()
     semantic = SemanticRetriever()
-    hybrid = HybridRetriever(bm25, semantic, alpha=0.5)
+    hybrid = HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
 
     queries = [
         "how does photosynthesis work",

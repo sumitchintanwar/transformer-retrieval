@@ -1,17 +1,11 @@
 import os
 import pandas as pd
 from datasets import load_dataset
-
-
-NUM_PASSAGES = 10_000
-OUTPUT_DIR = "data"
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "msmarco_passages_raw.csv")
+import config
 
 
 def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    print(f"Streaming passages from MS MARCO v1.1 (targeting {NUM_PASSAGES})...")
+    print(f"Streaming passages from MS MARCO v1.1 (targeting {config.NUM_PASSAGES_TO_DOWNLOAD})...")
     dataset = load_dataset("microsoft/ms_marco", "v1.1", split="train", streaming=True)
 
     seen = set()
@@ -22,18 +16,18 @@ def main():
                 seen.add(ps)
                 passages.append(ps)
                 if len(passages) % 1000 == 0:
-                    print(f"  Collected {len(passages)}/{NUM_PASSAGES} unique passages...")
-                if len(passages) >= NUM_PASSAGES:
+                    print(f"  Collected {len(passages)}/{config.NUM_PASSAGES_TO_DOWNLOAD} unique passages...")
+                if len(passages) >= config.NUM_PASSAGES_TO_DOWNLOAD:
                     break
-        if len(passages) >= NUM_PASSAGES:
+        if len(passages) >= config.NUM_PASSAGES_TO_DOWNLOAD:
             break
 
     df = pd.DataFrame({
         "passage_id": list(range(len(passages))),
         "passage_text": passages,
     })
-    df.to_csv(OUTPUT_FILE, index=False)
-    print(f"Saved {len(df)} passages to {OUTPUT_FILE}")
+    df.to_csv(config.RAW_DATA_FILE, index=False)
+    print(f"Saved {len(df)} passages to {config.RAW_DATA_FILE}")
 
 
 if __name__ == "__main__":

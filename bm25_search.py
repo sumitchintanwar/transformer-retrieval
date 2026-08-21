@@ -2,9 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from rank_bm25 import BM25Okapi
-
-
-DATA_FILE = os.path.join("data", "msmarco_passages.csv")
+import config
 
 
 def tokenize(text):
@@ -22,7 +20,7 @@ class BM25Retriever:
         data_path (str): Path to the preprocessed passages CSV.
     """
 
-    def __init__(self, data_path=DATA_FILE):
+    def __init__(self, data_path=config.PROCESSED_DATA_FILE):
         df = pd.read_csv(data_path)
         self.passage_ids = df["passage_id"].values
         self.passage_texts = df["passage_text"].values
@@ -41,10 +39,25 @@ class BM25Retriever:
             list[dict]: Each dict contains passage_id (int), score (float),
                         and passage_text (str), sorted by descending score.
         """
+        if not isinstance(query, str):
+            raise TypeError(f"Query must be a string, got {type(query).__name__}")
+        if not query.strip():
+            raise ValueError("Query cannot be empty or whitespace-only")
+        if len(query) > 1000:
+            raise ValueError("Query is too long (exceeds 1000 characters)")
+            
+        if not isinstance(top_k, int):
+            raise TypeError(f"top_k must be an integer, got {type(top_k).__name__}")
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than 0")
+            
+        actual_top_k = min(top_k, len(self.passage_ids))
+        if actual_top_k == 0:
+            return []
         tokenized_query = tokenize(query)
         scores = self.bm25.get_scores(tokenized_query)
 
-        top_indices = np.argsort(scores)[::-1][:top_k]
+        top_indices = np.argsort(scores)[::-1][:actual_top_k]
 
         results = []
         for idx in top_indices:

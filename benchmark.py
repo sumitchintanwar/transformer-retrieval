@@ -1,80 +1,63 @@
 import time
-import random
+import json
 import numpy as np
 import pandas as pd
 
 from bm25_search import BM25Retriever
 from hybrid_search import SemanticRetriever, HybridRetriever
+import config
 
 
-NUM_QUERIES = 50
-TOP_K = 10
-DATA_FILE = "data/msmarco_passages.csv"
-
-
-def get_sample_queries(n):
-    """Sample n random passages from the corpus to use as queries.
-
-    This is a standard benchmarking practice: use actual corpus passages
-    as queries so we know relevant documents exist in the index.
-    """
-    df = pd.read_csv(DATA_FILE)
-    samples = df.sample(n=n, random_state=42)
-    return samples["passage_text"].tolist()
-
-
-def benchmark_retriever(retriever, queries, label):
+def run_benchmark(retriever_name, retriever, queries, top_k=config.DEFAULT_TOP_K, warmup=2, reps=5):
     """Measure average query latency for a retriever.
 
     Runs each query once and records wall-clock time in milliseconds.
     Returns the average latency across all queries.
-
-    Args:
-        retriever: Object with a .search(query, top_k) method.
-        queries (list[str]): List of query strings.
-        label (str): Name of the method (for logging).
-
-    Returns:
-        float: Average latency in milliseconds.
     """
+    # Warmup
+    for query in queries[:warmup]:
+        retriever.search(query, top_k=top_k)
+
     latencies = []
     for i, query in enumerate(queries):
         start = time.perf_counter()
-        retriever.search(query, top_k=TOP_K)
+        retriever.search(query, top_k=top_k)
         elapsed_ms = (time.perf_counter() - start) * 1000
         latencies.append(elapsed_ms)
 
         if (i + 1) % 10 == 0:
             avg = np.mean(latencies)
-            print(f"  [{label}] {i + 1}/{len(queries)} done, running avg: {avg:.1f} ms")
+            print(f"  [{retriever_name}] {i + 1}/{len(queries)} done, running avg: {avg:.1f} ms")
 
     avg_latency = np.mean(latencies)
     return avg_latency
 
 
 def main():
-    print(f"Generating {NUM_QUERIES} sample queries...")
-    queries = get_sample_queries(NUM_QUERIES)
+    print(f"Loading {config.BENCHMARK_QUERIES} queries for benchmarking...")
+    with open(config.EVAL_FILE) as f:
+        eval_data = json.load(f)
+    queries = [q["query"] for q in eval_data[:config.BENCHMARK_QUERIES]]
 
-    print("\nLoading BM25 retriever...")
-    bm25 = BM25Retriever()
+    print("Loading retrievers...")
+    bm25 = BM25Retriever(data_path=config.PROCESSED_DATA_FILE)
+    semantic = SemanticRetriever(
+        model_name=config.MODEL_NAME,
+        index_path=config.FAISS_INDEX_FILE,
+        data_path=config.PROCESSED_DATA_FILE,
+    )
+    hybrid = HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
 
-    print("Loading semantic retriever...")
-    semantic = SemanticRetriever()
-
-    print("Loading hybrid retriever...")
-    hybrid = HybridRetriever(bm25, semantic, alpha=0.5)
-
-    print(f"\nBenchmarking with {NUM_QUERIES} queries, top_k={TOP_K}:\n")
+    print(f"\nBenchmarking with {len(queries)} queries, top_k={config.DEFAULT_TOP_K}:\n")
 
     print("Running BM25...")
-    bm25_avg = benchmark_retriever(bm25, queries, "BM25")
+    bm25_avg = run_benchmark("BM25", bm25, queries)
 
     print("\nRunning Semantic...")
-    sem_avg = benchmark_retriever(semantic, queries, "Semantic")
+    sem_avg = run_benchmark("Semantic", semantic, queries)
 
     print("\nRunning Hybrid...")
-    hyb_avg = benchmark_retriever(hybrid, queries, "Hybrid")
+    hyb_avg = run_benchmark("Hybrid", hybrid, queries)
 
     results = [
         ("BM25", bm25_avg),
@@ -91,9 +74,9 @@ def main():
 
     with open("benchmark_results.md", "w") as f:
         f.write("# Benchmark Results\n\n")
-        f.write(f"- **Queries**: {NUM_QUERIES}\n")
-        f.write(f"- **Top-K**: {TOP_K}\n")
-        f.write(f"- **Corpus**: MS MARCO passages (10K)\n\n")
+        f.write(f"- **Queries**: {len(queries)}\n")
+        f.write(f"- **Top-K**: {config.DEFAULT_TOP_K}\n")
+        f.write(f"- **Corpus Size**: {len(bm25.passage_ids)}\n\n")
         f.write("| Method | Average Latency (ms) |\n")
         f.write("|--------|---------------------:|\n")
         for method, latency in results:

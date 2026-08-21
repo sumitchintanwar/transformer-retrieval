@@ -2,10 +2,10 @@ import json
 import numpy as np
 from bm25_search import BM25Retriever
 from hybrid_search import SemanticRetriever, HybridRetriever
+import config
 
 
-EVAL_FILE = "evaluation_dataset.json"
-TOP_K = 10
+TOP_K = config.DEFAULT_TOP_K
 
 
 def precision_at_k(retrieved_ids, relevant_ids, k):
@@ -99,19 +99,23 @@ def evaluate_retriever(retriever, eval_data, k=TOP_K):
 
 
 def main():
-    with open(EVAL_FILE) as f:
+    with open(config.EVAL_FILE) as f:
         eval_data = json.load(f)
 
     print(f"Loaded {len(eval_data)} evaluation queries\n")
 
     print("Loading BM25 retriever...")
-    bm25 = BM25Retriever()
+    bm25 = BM25Retriever(data_path=config.PROCESSED_DATA_FILE)
 
     print("Loading semantic retriever...")
-    semantic = SemanticRetriever()
+    semantic = SemanticRetriever(
+        model_name=config.MODEL_NAME,
+        index_path=config.FAISS_INDEX_FILE,
+        data_path=config.PROCESSED_DATA_FILE,
+    )
 
     print("Loading hybrid retriever...")
-    hybrid = HybridRetriever(bm25, semantic, alpha=0.5)
+    hybrid = HybridRetriever(bm25, semantic, alpha=config.HYBRID_ALPHA)
 
     retrievers = {
         "BM25": bm25,

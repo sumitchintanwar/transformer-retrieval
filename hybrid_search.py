@@ -3,7 +3,7 @@ from logger import get_logger
 logger = get_logger(__name__)
 import os
 import pickle
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import faiss
 import numpy as np

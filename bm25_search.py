@@ -1,7 +1,6 @@
 from logger import get_logger
 
 logger = get_logger(__name__)
-import os
 from typing import Any, Dict, List
 
 import numpy as np

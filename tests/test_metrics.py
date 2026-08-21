@@ -1,7 +1,3 @@
-import math
-
-import pytest
-
 from evaluation import mrr_at_k, precision_at_k, recall_at_k
 from hybrid_search import min_max_normalize
 

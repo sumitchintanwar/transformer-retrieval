@@ -1,4 +1,3 @@
-import os
 import pickle
 from unittest.mock import patch
 

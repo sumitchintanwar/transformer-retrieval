@@ -13,7 +13,7 @@ from hybrid_search import HybridRetriever, SemanticRetriever
 
 
 def run_benchmark(
-    retriever_name, retriever, queries, top_k=config.DEFAULT_TOP_K, warmup=2, reps=5
+    retriever_name, retriever, queries, top_k=config.DEFAULT_TOP_K, warmup=2
 ):
     """Measure average query latency for a retriever.
 

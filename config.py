@@ -19,7 +19,6 @@ FAISS_INDEX_FILE = MODEL_DIR / "faiss_index.pickle"
 MODEL_NAME = os.getenv("MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
 DEVICE = os.getenv("DEVICE", "cpu")
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "256"))
-EMBEDDING_DIM = 384
 
 # Data Processing
 NUM_PASSAGES_TO_DOWNLOAD = int(os.getenv("NUM_PASSAGES", "10000"))
